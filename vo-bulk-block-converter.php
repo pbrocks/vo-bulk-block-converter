@@ -7,12 +7,12 @@
  * @wordpress-plugin
  * Plugin Name: VO Bulk Block Converter
  * Plugin URI: https://tech.zamaneh.com
- * Description: Convert all classic content to blocks. An extremely useful tool when upgrading to the WordPress 5 Gutenberg editor.
- * Version: 1.0.0
+ * Description: FORKED -- Convert all classic content to blocks. An extremely useful tool when upgrading to the WordPress 5 Gutenberg editor.
+ * Version: 2.0.1
  * Text Domain: vo-bulk-block-conversion
  * Requires at least: 5.4
  * Requires PHP: 5.6
- * Author: Zamaneh Media, Van Ons
+ * Author: Zamaneh Media, Van Ons, pbrocks
  * Author URI: https://en.radiozamaneh.com
  * License: GPL-2.0-or-later
  * License URI: https://spdx.org/licenses/GPL-2.0-or-later.html
@@ -22,12 +22,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-define( 'VO_DOMAIN', 'vo-bulk-block-conversion' );     // Text Domain
-define( 'VO_SLUG', 'bulk-block-conversion' );      		 // Plugin slug
-define( 'VO_FOLDER', plugin_dir_path( __FILE__ ) );    // Plugin folder
-define( 'VO_URL', plugin_dir_url( __FILE__ ) );        // Plugin URL
+// Text Domain
+define( 'VO_DOMAIN', 'vo-bulk-block-conversion' );
+// Plugin slug
+define( 'VO_SLUG', 'bulk-block-conversion' );
+// Plugin folder
+define( 'VO_FOLDER', plugin_dir_path( __FILE__ ) );
+// Plugin URL
+define( 'VO_URL', plugin_dir_url( __FILE__ ) );
 
-//Load files
+// Load files
 require_once VO_FOLDER . 'code/class-vo-post-table.php';
 
 /**
@@ -41,9 +45,12 @@ function vo_init_the_plugin() {
 	// dispatching POST to GET parameters
 	add_action( 'init', 'vo_dispatch_url' );
 	// load plugin text domain
-	add_action( 'init', function () {
-		load_plugin_textdomain( VO_DOMAIN );
-	} );
+	add_action(
+		'init',
+		function () {
+			load_plugin_textdomain( VO_DOMAIN );
+		}
+	);
 	// adding subitem to the Tools menu item
 	add_action( 'admin_menu', 'vo_display_menu_item' );
 	// bulk all posts convert
@@ -53,17 +60,17 @@ function vo_init_the_plugin() {
 }
 
 function vo_get_post_types() {
-    /**
-     * @param array $post_types
-     */
-    return apply_filters('vo_bulk_get_post_types', ['post', 'page']);
+	/**
+	   * @param array $post_types
+	   */
+	return apply_filters( 'vo_bulk_get_post_types', array( 'post', 'page' ) );
 }
 
 function vo_get_post_statuses() {
-    /**
-     * @param array $post_statusses
-     */
-    return apply_filters('vo_bulk_get_post_statuses', ['publish', 'future', 'draft', 'private']);
+	/**
+	  * @param array $post_statusses
+	  */
+	return apply_filters( 'vo_bulk_get_post_statuses', array( 'publish', 'future', 'draft', 'private' ) );
 }
 
 /**
@@ -73,7 +80,7 @@ function vo_get_post_statuses() {
  * @return bool
  */
 function vo_is_gutenberg_active() {
-	// Gutenberg plugin is installed and activated.
+	 // Gutenberg plugin is installed and activated.
 	// $gutenberg = ! ( false === has_filter( 'replace_editor', 'gutenberg_init' ) );
 
 	// Block editor since 5.0.
@@ -109,44 +116,44 @@ function vo_remove_gutenberg_overrides() {
  * Adding subitem to the Tools menu item.
  */
 function vo_display_menu_item() {
-    $plugin_page = add_management_page(
-	        __( 'Bulk Block Conversion', VO_DOMAIN ),
-            __( 'Block Conversion', VO_DOMAIN ),
-            'manage_options',
-            VO_SLUG,
-            'vo_show_admin_page'
-    );
+	$plugin_page = add_management_page(
+		__( 'Bulk Block Conversion', VO_DOMAIN ),
+		__( 'Block Conversion', VO_DOMAIN ),
+		'manage_options',
+		VO_SLUG,
+		'vo_show_admin_page'
+	);
 
-    add_action( 'load-' . $plugin_page, 'vo_load_admin_css_js' );
+	add_action( 'load-' . $plugin_page, 'vo_load_admin_css_js' );
 }
 
 /**
  * This function is only called when our plugin's page loads!
  */
 function vo_load_admin_css_js() {
-    // Unfortunately we can't just enqueue our scripts here - it's too early. So register against the proper action hook to do it
-    add_action( 'admin_enqueue_scripts', 'vo_enqueue_admin_css_js' );
+	// Unfortunately we can't just enqueue our scripts here - it's too early. So register against the proper action hook to do it
+	add_action( 'admin_enqueue_scripts', 'vo_enqueue_admin_css_js' );
 }
 
 /**
  * Enqueue admin styles and scripts.
  */
 function vo_enqueue_admin_css_js() {
-    wp_register_script( VO_DOMAIN . '-script', VO_URL . 'js/scripts.js', array( 'jquery', 'wp-blocks', 'wp-edit-post' ), false, true );
-    $jsObj = array(
-        'ajaxUrl'                      => admin_url( 'admin-ajax.php' ),
-        'serverErrorMessage'           => '<div class="error"><p>' . __( 'Server error occured!', VO_DOMAIN ) . '</p></div>',
-        'scanningMessage'              => '<p>' . sprintf( __( 'Scanning... %s%%', VO_DOMAIN ), 0 ) . '</p>',
-        'bulkConvertingMessage'        => '<p>' . sprintf( __( 'Converting... %s%%', VO_DOMAIN ), 0 ) . '</p>',
-        'bulkConvertingSuccessMessage' => '<div class="updated"><p>' . __( 'All posts successfully converted!', VO_DOMAIN ) . '</p></div>',
-        'confirmConvertAllMessage'     => __( 'You are about to convert all classic posts in this filter to blocks. These changes are irreversible. Convert all classic posts in this filter to blocks?', VO_DOMAIN ),
-        'convertingSingleMessage'      => __( 'Converting...', VO_DOMAIN ),
-        'convertedSingleMessage'       => __( 'Converted', VO_DOMAIN ),
-        'convertedSingleHTMLWarning'   => '<span style="color: darkred">' . __( 'Block core/html warning', VO_DOMAIN ) . '</span>',
-        'failedMessage'                => __( 'Failed', VO_DOMAIN ),
-    );
-    wp_localize_script( VO_DOMAIN . '-script', 'voObj', $jsObj );
-    wp_enqueue_script( VO_DOMAIN . '-script' );
+	wp_register_script( VO_DOMAIN . '-script', VO_URL . 'js/scripts.js', array( 'jquery', 'wp-blocks', 'wp-edit-post' ), false, true );
+	$jsObj = array(
+		'ajaxUrl'                      => admin_url( 'admin-ajax.php' ),
+		'serverErrorMessage'           => '<div class="error"><p>' . __( 'Server error occured!', VO_DOMAIN ) . '</p></div>',
+		'scanningMessage'              => '<p>' . sprintf( __( 'Scanning... %s%%', VO_DOMAIN ), 0 ) . '</p>',
+		'bulkConvertingMessage'        => '<p>' . sprintf( __( 'Converting... %s%%', VO_DOMAIN ), 0 ) . '</p>',
+		'bulkConvertingSuccessMessage' => '<div class="updated"><p>' . __( 'All posts successfully converted!', VO_DOMAIN ) . '</p></div>',
+		'confirmConvertAllMessage'     => __( 'You are about to convert all classic posts in this filter to blocks. These changes are irreversible. Convert all classic posts in this filter to blocks?', VO_DOMAIN ),
+		'convertingSingleMessage'      => __( 'Converting...', VO_DOMAIN ),
+		'convertedSingleMessage'       => __( 'Converted', VO_DOMAIN ),
+		'convertedSingleHTMLWarning'   => '<span style="color: darkred">' . __( 'Block core/html warning', VO_DOMAIN ) . '</span>',
+		'failedMessage'                => __( 'Failed', VO_DOMAIN ),
+	);
+	wp_localize_script( VO_DOMAIN . '-script', 'voObj', $jsObj );
+	wp_enqueue_script( VO_DOMAIN . '-script' );
 }
 
 
@@ -154,15 +161,15 @@ function vo_enqueue_admin_css_js() {
  * Rendering admin page of the plugin.
  */
 function vo_show_admin_page() {
-    @set_time_limit(0);
-    ?>
-<div id="vo-wrapper" class="wrap">
-	<h1><?php echo get_admin_page_title(); ?></h1>
+	   @set_time_limit( 0 );
+	?>
+	<div id="vo-wrapper" class="wrap">
+		<h1><?php echo get_admin_page_title(); ?></h1>
 
-	<div id="vo-output">
-		<div id="vo-table"><?php vo_render_table(); ?></div>
+		<div id="vo-output">
+			<div id="vo-table"><?php vo_render_table(); ?></div>
+		</div>
 	</div>
-</div>
 	<?php
 }
 
@@ -181,8 +188,8 @@ function vo_bulk_convert_ajax() {
 	}
 
 	if ( ! empty( $_GET['total'] ) ) {
-        global $wpdb;
-        $offset         = intval( $_GET['offset'] );
+		global $wpdb;
+		$offset         = intval( $_GET['offset'] );
 		$total_expected = intval( $_GET['total'] );
 
 		if ( $total_expected == -1 ) {
@@ -197,14 +204,14 @@ function vo_bulk_convert_ajax() {
 			'postsData' => array(),
 		);
 
-        $args = VO_Post_Table::set_args_for_query();
+		$args = VO_Post_Table::set_args_for_query();
 
-        $args .= "limit 10 ";
+		$args .= 'limit 10 ';
 
-        $table = "{$wpdb->prefix}posts";
-        $select = "{$table}.ID, {$table}.post_content ";
-        $query = "SELECT {$select} FROM {$table} {$args}";
-        $results = $wpdb->get_results($query, ARRAY_A);
+		$table = "{$wpdb->prefix}posts";
+		$select = "{$table}.ID, {$table}.post_content ";
+		$query = "SELECT {$select} FROM {$table} {$args}";
+		$results = $wpdb->get_results( $query, ARRAY_A );
 
 		$posts_data = array();
 		foreach ( $results as $post ) {
@@ -248,8 +255,8 @@ function vo_bulk_convert_ajax() {
  *
  * @return int
  */
-function vo_get_count( ) {
-    return VO_Post_Table::count_items();
+function vo_get_count() {
+	return VO_Post_Table::count_items();
 }
 
 /**
@@ -258,9 +265,9 @@ function vo_get_count( ) {
 function vo_render_table() {
 	?>
 	<div class="meta-box-sortables ui-sortable">
-        <form method="get">
-            <input type="hidden" name="page" value="<?php echo VO_SLUG; ?>">
-        </form>
+		<form method="get">
+			<input type="hidden" name="page" value="<?php echo VO_SLUG; ?>">
+		</form>
 	<?php
 	$table = new VO_Post_Table();
 	$table->views();
@@ -279,7 +286,7 @@ function vo_render_table() {
  * Single post converting via ajax.
  */
 function vo_single_convert_ajax() {
-	header( 'Content-Type: application/json; charset=UTF-8' );
+	   header( 'Content-Type: application/json; charset=UTF-8' );
 
 	$json = array(
 		'error'   => false,
